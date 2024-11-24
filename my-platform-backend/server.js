@@ -1,15 +1,24 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
-require('dotenv').config();
+const workflowRoutes = require('./routes/workflowRoutes'); // Exemple de route
 
-app.use(cors());
+// Middleware global pour parser les JSON
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+// Enregistrer les routes
+app.use(workflowRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Backend is working');
+// Gestion des erreurs globales (optionnelle)
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({ error: err.message || 'Erreur serveur' });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Démarrage du serveur
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Serveur en cours d'exécution sur http://localhost:${PORT}`);
+});
+
+// Vérification de la connexion à la base de données
+const { checkConnection } = require('./config/dbConfig');
+checkConnection();
