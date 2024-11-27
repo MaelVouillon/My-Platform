@@ -2,6 +2,7 @@
 
 const nodemailer = require('nodemailer');
 const emailConfig = require('../../config/emailConfig'); // Chemin relatif
+const GmailIntegration = require('../../integrations/email/GmailIntegration'); // Chemin mis à jour
 
 class SendEmailAction {
   /**
@@ -12,23 +13,16 @@ class SendEmailAction {
    */
   static async execute(config, inputData) {
     try {
-      // Configuration du transporteur SMTP
-      const transporter = nodemailer.createTransport(emailConfig);
+      console.log(`Préparation de l'envoi d'email à : ${config.to}`);
+      const result = await GmailIntegration.sendEmail(
+        config.to,
+        config.subject || 'Notification',
+        config.text || 'Voici un message généré automatiquement.',
+        config.html || inputData.htmlContent || '<p>Aucun contenu HTML fourni.</p>'
+      );
 
-      // Construction de l'email
-      const mailOptions = {
-        from: emailConfig.sender, // Expéditeur
-        to: config.to, // Destinataire(s)
-        subject: config.subject || 'Notification', // Objet
-        text: config.text || 'Voici un message généré automatiquement.', // Texte brut
-        html: config.html || inputData.htmlContent || '<p>Aucun contenu HTML fourni.</p>', // Contenu HTML
-      };
-
-      // Envoi de l'email
-      const info = await transporter.sendMail(mailOptions);
-
-      console.log(`Email envoyé : ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
+      console.log(`Email envoyé : ${result.messageId}`);
+      return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('Erreur lors de l\'envoi d\'email :', error.message);
       return { success: false, error: error.message };

@@ -2,8 +2,9 @@
 
 const Workflow = require('../models/Workflow');
 const helpers = require('../middleware/helpers');
-const workflowExecutor = require('../services/workflowExecutor');
-const { handleError } = require('../middleware/errorHandler');
+const workflowExecutor = require('../workfows/core/WorkflowExecutor');
+const { handleError } = require('../middleware/errorHandler'); // Assurez-vous que ce chemin est correct
+const TriggerManager = require('../workflows/core/TriggerManager');
 
 // Crée un nouveau workflow
 const createWorkflow = async (req, res) => {
@@ -22,6 +23,9 @@ const createWorkflow = async (req, res) => {
       actions,
       createdBy: req.user.id, // ID de l'utilisateur authentifié
     });
+
+    // Enregistrer le déclencheur
+    TriggerManager.register(trigger, newWorkflow);
 
     res.status(201).json(newWorkflow);
   } catch (error) {
@@ -70,6 +74,12 @@ const updateWorkflow = async (req, res) => {
       return res.status(404).json({ error: 'Workflow non trouvé.' });
     }
 
+    // Si le type de déclencheur a changé, désenregistrer l'ancien et enregistrer le nouveau
+    if (trigger && trigger.type !== workflow.trigger.type) {
+      TriggerManager.unregisterEmailTrigger(workflow.trigger, workflow); // Adapter selon le type
+      TriggerManager.register(trigger, workflow);
+    }
+
     workflow.name = name || workflow.name;
     workflow.trigger = trigger || workflow.trigger;
     workflow.actions = actions || workflow.actions;
@@ -93,6 +103,11 @@ const deleteWorkflow = async (req, res) => {
     }
 
     await workflow.destroy();
+
+    // Désenregistrer le déclencheur
+    if (workflow.trigger.type === 'emailReceived') {
+      TriggerManager.unregisterEmailTrigger(workflow.trigger, workflow);
+    }
 
     res.status(200).json({ message: 'Workflow supprimé avec succès.' });
   } catch (error) {

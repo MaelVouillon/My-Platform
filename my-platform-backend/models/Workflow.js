@@ -1,9 +1,12 @@
-// représente la structure des données des workflows dans la base de données. Il fournit des méthodes pour créer, lire, mettre à jour, et supprimer les workflows.
+// Workflow.js
+// Représente la structure des données des workflows dans la base de données. Il fournit des méthodes pour créer, lire, mettre à jour, et supprimer les workflows.
 // Définit les champs nécessaires pour un workflow
 // Fournit des méthodes spécifiques pour interagir avec les workflows
 // Utilise un ORM comme Sequelize pour communiquer avec la base
+
 const { DataTypes, Model } = require('sequelize');
 const { sequelize } = require('../config/dbConfig');
+const User = require('./User');
 
 class Workflow extends Model {}
 
@@ -38,6 +41,10 @@ Workflow.init(
     },
     createdBy: {
       type: DataTypes.UUID,
+      references: {
+        model: User,
+        key: 'id',
+      },
       allowNull: false,
     },
   },
@@ -45,26 +52,12 @@ Workflow.init(
     sequelize,
     modelName: 'Workflow',
     tableName: 'workflows',
-    timestamps: true, // Inclut createdAt et updatedAt
+    timestamps: true,
   }
 );
 
-// Associations (relation : un workflow appartient à un utilisateur via "createdBy" ; l'association est définie avec "belongsTo")
-Workflow.associate = (models) => {
-  Workflow.belongsTo(models.User, {
-    foreignKey: 'createdBy',
-    as: 'owner',
-  });
-};
-
-// Méthodes personnalisées (Récupère tous les workflows pour un utilisateur spécifique ; trie les workflow par date de création)
-Workflow.findByUser = async function (userId) {
-  return await this.findAll({
-    where: {
-      createdBy: userId,
-    },
-    order: [['createdAt', 'DESC']],
-  });
-};
+// Associations
+User.hasMany(Workflow, { foreignKey: 'createdBy' });
+Workflow.belongsTo(User, { foreignKey: 'createdBy' });
 
 module.exports = Workflow;

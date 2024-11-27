@@ -10,6 +10,7 @@ const router = express.Router();
 const workflowController = require('../controllers/workflowController');
 const authMiddleware = require('../middleware/authMiddleware');
 const validationMiddleware = require('../middleware/validationMiddleware');
+const GmailIntegration = require('../integrations/email/GmailIntegration'); // Chemin mis à jour
 
 // Logs de débogage
 console.log('authMiddleware type:', typeof authMiddleware); // Devrait afficher 'function'
@@ -23,7 +24,7 @@ console.log('executeWorkflow type:', typeof workflowController.executeWorkflow);
 
 // Créer un nouveau workflow
 router.post(
-  '/api/workflows',
+  '/workflows',
   authMiddleware, // Middleware d'authentification
   validationMiddleware.validateWorkflowCreation, // Middleware de validation
   workflowController.createWorkflow // Contrôleur
@@ -31,21 +32,21 @@ router.post(
 
 // Récupérer la liste de tous les workflows
 router.get(
-  '/api/workflows',
+  '/workflows',
   authMiddleware, // Middleware d'authentification
   workflowController.getAllWorkflows // Contrôleur
 );
 
 // Récupérer un workflow spécifique par son ID
 router.get(
-  '/api/workflows/:id',
+  '/workflows/:id',
   authMiddleware, // Authentification requise
   workflowController.getWorkflowById // Contrôleur
 );
 
 // Mettre à jour un workflow
 router.put(
-  '/api/workflows/:id',
+  '/workflows/:id',
   authMiddleware, // Authentification requise
   validationMiddleware.validateWorkflowUpdate, // Middleware de validation
   workflowController.updateWorkflow // Contrôleur
@@ -53,17 +54,35 @@ router.put(
 
 // Supprimer un workflow
 router.delete(
-  '/api/workflows/:id',
+  '/workflows/:id',
   authMiddleware, // Authentification requise
   workflowController.deleteWorkflow // Contrôleur
 );
 
 // Exécuter un workflow
 router.post(
-  '/api/workflows/execute',
+  '/workflows/execute',
   authMiddleware, // Authentification requise
   validationMiddleware.validateWorkflowExecution, // Middleware de validation
   workflowController.executeWorkflow // Contrôleur
 );
+
+// Ajout du test d'envoi d'email
+router.get('/test-email', async (req, res) => {
+  console.log('Requête reçue pour /api/test-email');
+  try {
+    const result = await GmailIntegration.sendEmail(
+      'maelpitch@gmail.com', // Remplacez par l'adresse de destination
+      'Test d\'email depuis la plateforme',
+      'Ceci est un email de test généré automatiquement.',
+      '<p>Ceci est un email de test généré automatiquement.</p>'
+    );
+
+    res.status(200).json({ success: true, messageId: result.messageId });
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi d\'email :', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 module.exports = router;

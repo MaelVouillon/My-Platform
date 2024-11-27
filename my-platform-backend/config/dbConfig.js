@@ -8,78 +8,45 @@
 // Sequelize (ORM) : Passe les informations de connexion à Sequelize pour établir la communication avec la base
 // Modèles : Fournit une instance de connexion que les modèles utilisent pour interagir avec la base
 // Middleware : Peut être utilisé pour valider l’état de la connexion avant de traiter les requêtes
-require('dotenv').config();
+
+const path = require('path');
 const { Sequelize } = require('sequelize');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const dbConfig = {
-  development: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'password', // Utiliser DB_PASSWORD
-    database: process.env.DB_NAME || 'my_platform_dev',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  },
-  test: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASS || 'password',
-    database: process.env.DB_NAME_TEST || 'my_platform_test',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  },
-  production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'postgres',
-    pool: {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000,
-    },
-  },
-};
+const { DB_NAME, DB_USER, DB_PASS, DB_HOST, DB_PORT } = process.env;
 
-const env = process.env.NODE_ENV || 'development';
-const config = dbConfig[env];
+// Vérification des variables d'environnement
+if (!DB_NAME || !DB_USER || !DB_PASS || !DB_HOST) {
+  console.error('Erreur : Une ou plusieurs variables d\'environnement sont manquantes.');
+  process.exit(1);
+}
 
-const sequelize = new Sequelize(
-  config.database,
-  config.username,
-  config.password,
-  {
-    host: config.host,
-    port: config.port,
-    dialect: config.dialect,
-    pool: config.pool,
-    logging: env === 'development' ? console.log : false,
-  }
-);
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
+  host: DB_HOST,
+  port: DB_PORT || 5432,
+  dialect: 'postgres',
+});
 
-const checkConnection = async () => {
+const syncDatabase = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Connexion à la base de données réussie !');
+    console.log('Connexion à la base de données réussie.');
+    await sequelize.sync({ alter: true }); // Synchronise les modèles
+    console.log('Base de données synchronisée.');
   } catch (error) {
-    console.error('Erreur de connexion à la base de données :', error);
+    console.error('Erreur lors de la connexion à la base de données :', error.message);
     process.exit(1);
   }
 };
 
-module.exports = { sequelize, checkConnection };
+const checkConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connexion à la base de données vérifiée avec succès !');
+  } catch (error) {
+    console.error('Erreur de connexion à la base de données :', error.message);
+    process.exit(1);
+  }
+};
+
+module.exports = { sequelize, syncDatabase, checkConnection };
