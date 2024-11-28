@@ -2,7 +2,7 @@
 
 const Workflow = require('../models/Workflow');
 const helpers = require('../middleware/helpers');
-const workflowExecutor = require('../workfows/core/WorkflowExecutor');
+const workflowExecutor = require('../workflows/core/workflowExecutor');
 const { handleError } = require('../middleware/errorHandler'); // Assurez-vous que ce chemin est correct
 const TriggerManager = require('../workflows/core/TriggerManager');
 
@@ -134,6 +134,42 @@ const executeWorkflow = async (req, res) => {
   }
 };
 
+// Récupérer tous les triggers
+const getAllTriggers = async (req, res) => {
+  try {
+    const triggers = await Trigger.findAll(); // Assurez-vous d'importer le modèle Trigger
+    res.status(200).json(triggers);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Créer un nouveau trigger
+const createTrigger = async (req, res) => {
+  try {
+    const { name, type, config } = req.body;
+    const newTrigger = await Trigger.create({ name, type, config });
+    res.status(201).json(newTrigger);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Supprimer un trigger
+const deleteTrigger = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const trigger = await Trigger.findByPk(id);
+    if (!trigger) {
+      return res.status(404).json({ error: 'Trigger non trouvé.' });
+    }
+    await trigger.destroy();
+    res.status(200).json({ message: 'Trigger supprimé avec succès.' });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 // Exportation des fonctions
 module.exports = {
   createWorkflow,
@@ -142,4 +178,7 @@ module.exports = {
   updateWorkflow,
   deleteWorkflow,
   executeWorkflow,
+  getAllTriggers,
+  createTrigger,
+  deleteTrigger,
 };

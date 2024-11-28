@@ -10,6 +10,10 @@ const workflowRoutes = require('./routes/workflowRoutes');
 const userRoutes = require('./routes/userRoutes'); // Importez les routes utilisateurs
 const authRoutes = require('./routes/authRoutes'); // Importez les routes d'authentification
 const TriggerManager = require('./workflows/core/TriggerManager');
+const fileProcessingRouter = require('./routes/fileProcessing'); // Importez les routes de traitement de fichiers
+const excelProcessingRouter = require('./routes/excelProcessing'); // Importez les routes de traitement de fichiers Excel
+const financeRoutes = require('./routes/financeRoutes');
+const triggerRoutes = require('./routes/triggerRoutes');
 
 // Configurer CORS
 app.use(cors({
@@ -32,6 +36,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', workflowRoutes); // Enregistrez les routes workflows avec le préfixe /api
 app.use('/api', userRoutes); // Enregistrez les routes utilisateurs avec le préfixe /api
 app.use('/api', authRoutes); // Enregistrez les routes d'authentification avec le préfixe /api
+app.use('/api', fileProcessingRouter); // Enregistrez les routes de traitement de fichiers avec le préfixe /api
+app.use('/api', excelProcessingRouter); // Enregistrez les routes de traitement de fichiers Excel avec le préfixe /api
+app.use('/api', financeRoutes);
+app.use('/api', triggerRoutes);
 
 // Utiliser les routes d'authentification
 app.use('/', authRoutes);
@@ -39,6 +47,14 @@ app.use('/', authRoutes);
 // Gestion des erreurs globales (optionnelle)
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Erreur serveur' });
+});
+
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, 'frontend/build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
 
 // Démarrage du serveur
