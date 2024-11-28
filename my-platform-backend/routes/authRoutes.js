@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Assurez-vous que le modèle User est correctement importé
 const { google } = require('googleapis');
+const authController = require('../controllers/authController');
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
@@ -86,5 +87,8 @@ router.get('/auth/callback', async (req, res) => {
     res.status(500).send('Erreur lors de l\'authentification.');
   }
 });
+
+// Route pour continuer en tant qu'invité
+router.post('/continue-as-guest', authController.continueAsGuest);
 
 module.exports = router;

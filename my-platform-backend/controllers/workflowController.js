@@ -36,6 +36,11 @@ const createWorkflow = async (req, res) => {
 // Récupère tous les workflows pour un utilisateur
 const getAllWorkflows = async (req, res) => {
   try {
+    if (req.user.role === 'guest') {
+      // Limiter l'accès ou fournir des données spécifiques pour les invités
+      return res.status(200).json([]); // Exemple : retourner un tableau vide
+    }
+
     const workflows = await Workflow.findAll({
       where: { createdBy: req.user.id },
     });
